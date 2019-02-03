@@ -41,28 +41,35 @@ namespace Assignment01
             */
             Vector3[] vertices =
             {
-                new Vector3(100, 200, 300), // 0 top left
-                new Vector3(100, 100, 300), // 1 bottom left
-                new Vector3(200, 200, 200), // 2 top middle
-                new Vector3(200, 100, 200), // 3 bottom middle
-                new Vector3(300, 200, 300), // 4 top right
-                new Vector3(300, 100, 300)  // 5 bottom right
+                new Vector3((width / 2) - 400, (height / 2) + 100, 400), // 0 top left
+                new Vector3((width / 2) - 400, (height / 2) - 100, 400), // 1 bottom left
+                new Vector3((width / 2) - 200, (height / 2) + 100, 200), // 2 top middle
+                new Vector3((width / 2) - 200, (height / 2) - 100, 200), // 3 bottom middle
+                new Vector3((width / 2), (height / 2) + 100, 400), // 4 top right
+                new Vector3((width / 2), (height / 2) - 100, 400)  // 5 bottom right
             };
             int[] faces =
             {
-                0, 1, 3, //left bottom
-                0, 2, 3, //left top
-                2, 3, 4, //right top
-                3, 4, 5  //right bottom
+                1, 0, 3, //left bottom
+                3, 0, 2, //left top
+                3, 2, 4, //right top
+                5, 3, 4  //right bottom
 
             };
 
             Texture2D RayTracingResult = new Texture2D(width, height);
 
-            Vector3 origin = new Vector3(width / 2, height / 2, -200);
+            Vector3 origin = new Vector3(width / 2 , height / 2, -500);
             Vector3 direction;
             float t;
             Vector3 barycentricCoordinate;
+
+            for(int i = 0; i < 12; i++)
+            {
+                Debug.Log(vertices[faces[i]]);
+                Debug.Log(vertices[faces[++i]]);
+                Debug.Log(vertices[faces[++i]]);
+            }
 
             for(int y = 0; y < height; ++y)
             {
@@ -74,8 +81,9 @@ namespace Assignment01
                     {
                         if(IntersectTriangle(origin, direction, vertices[faces[i]], vertices[faces[++i]], vertices[faces[++i]], out t, out barycentricCoordinate))
                         {
-                            RayTracingResult.SetPixel(x, y, Color.blue);
-                            //i = 12;
+                            Color bColor = new Color(barycentricCoordinate.x, barycentricCoordinate.y, barycentricCoordinate.z);
+                            RayTracingResult.SetPixel(x, y, bColor);
+                            i = 12;
                         }
                     }
                 }
@@ -129,20 +137,24 @@ namespace Assignment01
             Vector3 vAvC = vC - vA;
             Vector3 Normal = Vector3.Cross(vAvB, vAvC);
             float area = Vector3.Magnitude(Normal);
+            float denom = Vector3.Dot(Normal, Normal);
 
             float raydotnorm = Vector3.Dot(Normal, direction);
             float d = Vector3.Dot(Normal, vA);
 
-            t = (Vector3.Dot(Normal, origin) + d);
+            t = (Vector3.Dot(Normal, origin) + d) / raydotnorm;
 
-            barycentricCoordinate = origin + t * direction;
+            Vector3 ray = origin + t * direction;
             Vector3 temp;
+
+            // temp value to allow return false
+            barycentricCoordinate = ray;
 
             if (t < 0 || Mathf.Abs(raydotnorm) < float.Epsilon) return false;
 
             // exceed edge vavb?
             Vector3 edge1 = vB - vA;
-            Vector3 bary1 = barycentricCoordinate - vA;
+            Vector3 bary1 = ray - vA;
             temp = Vector3.Cross(edge1, bary1);
             if(Vector3.Dot(Normal, temp) < 0)
             {
@@ -151,21 +163,29 @@ namespace Assignment01
 
             //exceed edge vavc
             Vector3 edge2 = vC - vB;
-            bary1 = barycentricCoordinate - vB;
+            bary1 = ray - vB;
             temp = Vector3.Cross(edge2, bary1);
-            if(Vector3.Dot(Normal, temp) < 0)
+            float u = Vector3.Dot(Normal, temp);
+            if (u < 0)
             {
                 return false;
             }
 
+            u = u / denom;
+
             //exceed edge vbvc
             Vector3 edge3 = vA - vC;
-            bary1 = barycentricCoordinate - vC;
+            bary1 = ray - vC;
             temp = Vector3.Cross(edge3, bary1);
-            if(Vector3.Dot(Normal, temp) < 0)
+            float v = Vector3.Dot(Normal, temp);
+            if(v < 0)
             {
                 return false;
             }
+
+            v = v / denom;
+
+            barycentricCoordinate = new Vector3(u, v, 1 - u - v);
 
             return true;
             throw new NotImplementedException();

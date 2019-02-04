@@ -41,35 +41,28 @@ namespace Assignment01
             */
             Vector3[] vertices =
             {
-                new Vector3((width / 2) - 400, (height / 2) + 100, 400), // 0 top left
-                new Vector3((width / 2) - 400, (height / 2) - 100, 400), // 1 bottom left
-                new Vector3((width / 2) - 200, (height / 2) + 100, 200), // 2 top middle
-                new Vector3((width / 2) - 200, (height / 2) - 100, 200), // 3 bottom middle
-                new Vector3((width / 2), (height / 2) + 100, 400), // 4 top right
-                new Vector3((width / 2), (height / 2) - 100, 400)  // 5 bottom right
+                new Vector3((width / 2) - 200, (height / 2) + 100, 200), // 0 top left
+                new Vector3((width / 2) - 200, (height / 2) - 100, 200), // 1 bottom left
+                new Vector3((width / 2), (height / 2) + 100, 0), // 2 top middle
+                new Vector3((width / 2), (height / 2) - 100, 0), // 3 bottom middle
+                new Vector3((width / 2) + 200, (height / 2) + 100, 200), // 4 top right
+                new Vector3((width / 2) + 200, (height / 2) - 100, 200),  // 5 bottom right
             };
             int[] faces =
             {
                 1, 0, 3, //left bottom
                 3, 0, 2, //left top
                 3, 2, 4, //right top
-                5, 3, 4  //right bottom
+                3, 4, 5,  //right bottom
 
             };
 
             Texture2D RayTracingResult = new Texture2D(width, height);
 
-            Vector3 origin = new Vector3(width / 2 , height / 2, -500);
+            Vector3 origin = new Vector3(width / 2 , height / 2, -300);
             Vector3 direction;
             float t;
             Vector3 barycentricCoordinate;
-
-            for(int i = 0; i < 12; i++)
-            {
-                Debug.Log(vertices[faces[i]]);
-                Debug.Log(vertices[faces[++i]]);
-                Debug.Log(vertices[faces[++i]]);
-            }
 
             for(int y = 0; y < height; ++y)
             {
@@ -110,6 +103,65 @@ namespace Assignment01
             return:
                 Texture2D - Texture2D object which contains the rendered result
             */
+            Vector3[] vertices =
+            {
+                new Vector3((width / 2) - 200, (height / 2) + 100, 200), // 0 top left
+                new Vector3((width / 2) - 200, (height / 2) - 100, 200), // 1 bottom left
+                new Vector3((width / 2), (height / 2) + 100, 0), // 2 top middle
+                new Vector3((width / 2), (height / 2) - 100, 0), // 3 bottom middle
+                new Vector3((width / 2) + 200, (height / 2) + 100, 200), // 4 top right
+                new Vector3((width / 2) + 200, (height / 2) - 100, 200),  // 5 bottom right
+            };
+            int[] faces =
+            {
+                1, 0, 3, //left bottom
+                3, 0, 2, //left top
+                3, 2, 4, //right top
+                3, 4, 5,  //right bottom
+
+            };
+            Texture2D RayTracingResult = new Texture2D(width, height);
+
+            Vector3 origin = new Vector3(width / 2, height / 2, -300);
+            Vector3 direction;
+            float t;
+            Vector3 barycentricCoordinate;
+
+            for(int y = 0; y < height; ++y)
+            {
+                for(int x = 0; x < width; ++x)
+                {
+                    direction = new Vector3(x, y, 0) - origin;
+                    direction.Normalize();
+                    for (int i = 0; i < 12; i++)
+                    {
+                        Vector3 a = vertices[faces[i]];
+                        Vector3 b = vertices[faces[++i]];
+                        Vector3 c = vertices[faces[++i]];
+                        if (IntersectTriangle(origin, direction, a, b, c, out t, out barycentricCoordinate))
+                        {
+                            float u = barycentricCoordinate.x * a.x + barycentricCoordinate.y * b.x + barycentricCoordinate.z * c.x;
+                            float v = barycentricCoordinate.x * a.y + barycentricCoordinate.y * b.y + barycentricCoordinate.z * c.y;
+                            //float w = (a.z) * barycentricCoordinate.x + (b.z) * barycentricCoordinate.y + (c.z) * barycentricCoordinate.z;
+                            //u /= w;
+                            u *= inputTexture.width;
+                            // v /= w;
+                            v *= inputTexture.height;
+                            
+                            
+                            // float u = (a.x / a.z) * barycentricCoordinate.x + (b.x / b.z) * barycentricCoordinate.y + (c.x / c.z) * barycentricCoordinate.z;
+                            // float v = (a.y / a.z) * barycentricCoordinate.x + (b.y / b.z) * barycentricCoordinate.y + (c.y / c.z) * barycentricCoordinate.z;
+                            // float textCoordU = u;// / w;
+                            // float textCoordV = v;// / w;
+                            // inputTexture.SetPixel((int)textCoordU, (int)textCoordV, Color.black); 
+                            RayTracingResult.SetPixel(x, y, inputTexture.GetPixel((int)u, (int)v));
+                            i = 12;
+                        }
+                    }
+                }
+            }
+            return RayTracingResult;
+
             throw new NotImplementedException();
         }
 
@@ -130,19 +182,16 @@ namespace Assignment01
             return:
                 bool - indicating hit or not
             */
-            //code written with help from https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
+            // code written with help from https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 
             // plane norm
-            Vector3 vAvB = vB - vA;
-            Vector3 vAvC = vC - vA;
-            Vector3 Normal = Vector3.Cross(vAvB, vAvC);
-            float area = Vector3.Magnitude(Normal);
+            Vector3 Normal = Vector3.Cross(vA - vB, vA - vC);
             float denom = Vector3.Dot(Normal, Normal);
 
             float raydotnorm = Vector3.Dot(Normal, direction);
             float d = Vector3.Dot(Normal, vA);
 
-            t = (Vector3.Dot(Normal, origin) + d) / raydotnorm;
+            t = (d - Vector3.Dot(Normal, origin)) / raydotnorm;
 
             Vector3 ray = origin + t * direction;
             Vector3 temp;
@@ -161,7 +210,7 @@ namespace Assignment01
                 return false;
             }
 
-            //exceed edge vavc
+            //exceed edge vbvc
             Vector3 edge2 = vC - vB;
             bary1 = ray - vB;
             temp = Vector3.Cross(edge2, bary1);
@@ -173,7 +222,7 @@ namespace Assignment01
 
             u = u / denom;
 
-            //exceed edge vbvc
+            //exceed edge vavc
             Vector3 edge3 = vA - vC;
             bary1 = ray - vC;
             temp = Vector3.Cross(edge3, bary1);

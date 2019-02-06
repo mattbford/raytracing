@@ -41,12 +41,12 @@ namespace Assignment01
             */
             Vector3[] vertices =
             {
-                new Vector3((width / 2) - 200, (height / 2) + 100, 200), // 0 top left
-                new Vector3((width / 2) - 200, (height / 2) - 100, 200), // 1 bottom left
-                new Vector3((width / 2), (height / 2) + 100, 0), // 2 top middle
-                new Vector3((width / 2), (height / 2) - 100, 0), // 3 bottom middle
-                new Vector3((width / 2) + 200, (height / 2) + 100, 200), // 4 top right
-                new Vector3((width / 2) + 200, (height / 2) - 100, 200),  // 5 bottom right
+                new Vector3((width / 2) - 200, (height / 2) + 105, 200), // 0 top left
+                new Vector3((width / 2) - 200, (height / 2) - 105, 200), // 1 bottom left
+                new Vector3((width / 2), (height / 2) + 100, 5), // 2 top middle
+                new Vector3((width / 2), (height / 2) - 100, 5), // 3 bottom middle
+                new Vector3((width / 2) + 200, (height / 2) + 105, 200), // 4 top right
+                new Vector3((width / 2) + 200, (height / 2) - 105, 200),  // 5 bottom right
             };
             int[] faces =
             {
@@ -59,7 +59,7 @@ namespace Assignment01
 
             Texture2D RayTracingResult = new Texture2D(width, height);
 
-            Vector3 origin = new Vector3(width / 2 , height / 2, -300);
+            Vector3 origin = new Vector3(width / 2 , height / 2, -400);
             Vector3 direction;
             float t;
             Vector3 barycentricCoordinate;
@@ -107,8 +107,8 @@ namespace Assignment01
             {
                 new Vector3((width / 2) - 200, (height / 2) + 100, 200), // 0 top left
                 new Vector3((width / 2) - 200, (height / 2) - 100, 200), // 1 bottom left
-                new Vector3((width / 2), (height / 2) + 100, 0), // 2 top middle
-                new Vector3((width / 2), (height / 2) - 100, 0), // 3 bottom middle
+                new Vector3((width / 2), (height / 2) + 100, 100), // 2 top middle
+                new Vector3((width / 2), (height / 2) - 100, 100), // 3 bottom middle
                 new Vector3((width / 2) + 200, (height / 2) + 100, 200), // 4 top right
                 new Vector3((width / 2) + 200, (height / 2) - 100, 200),  // 5 bottom right
             };
@@ -122,9 +122,10 @@ namespace Assignment01
             };
             Texture2D RayTracingResult = new Texture2D(width, height);
 
-            Vector3 origin = new Vector3(width / 2, height / 2, -300);
+            Vector3 origin = new Vector3(width / 2, height / 2, -400);
             Vector3 direction;
             float t;
+            int once = 1;
             Vector3 barycentricCoordinate;
 
             for(int y = 0; y < height; ++y)
@@ -140,20 +141,47 @@ namespace Assignment01
                         Vector3 c = vertices[faces[++i]];
                         if (IntersectTriangle(origin, direction, a, b, c, out t, out barycentricCoordinate))
                         {
+
+                            if(i < 4) //bottom left triangle
+                            {
+                                a.x = 0; a.y = 0;
+                                b.x = 0; b.y = 1;
+                                c.x = 1; c.y = 0;
+                            }
+                            else if(i < 7) //top left triangle
+                            {
+                                a.x = 1; a.y = 0;
+                                b.x = 0; b.y = 1;
+                                c.x = 1; c.y = 1;
+                            }
+                            else if(i < 10) //top right triangle
+                            {
+                                a.x = 1; a.y = 0;
+                                b.x = 1; b.y = 1;
+                                c.x = 0; c.y = 1;
+                            }
+                            else //bottom right triangle
+                            {
+                                a.x = 1; a.y = 0;
+                                b.x = 0; b.y = 1;
+                                c.x = 0; c.y = 0;
+                            }
+
                             float u = barycentricCoordinate.x * a.x + barycentricCoordinate.y * b.x + barycentricCoordinate.z * c.x;
                             float v = barycentricCoordinate.x * a.y + barycentricCoordinate.y * b.y + barycentricCoordinate.z * c.y;
-                            //float w = (a.z) * barycentricCoordinate.x + (b.z) * barycentricCoordinate.y + (c.z) * barycentricCoordinate.z;
-                            //u /= w;
                             u *= inputTexture.width;
-                            // v /= w;
                             v *= inputTexture.height;
-                            
-                            
-                            // float u = (a.x / a.z) * barycentricCoordinate.x + (b.x / b.z) * barycentricCoordinate.y + (c.x / c.z) * barycentricCoordinate.z;
-                            // float v = (a.y / a.z) * barycentricCoordinate.x + (b.y / b.z) * barycentricCoordinate.y + (c.y / c.z) * barycentricCoordinate.z;
-                            // float textCoordU = u;// / w;
-                            // float textCoordV = v;// / w;
-                            // inputTexture.SetPixel((int)textCoordU, (int)textCoordV, Color.black); 
+
+                            //debug prints
+                            if (once == 1)
+                            {
+                                Debug.Log(inputTexture.width);
+                                Debug.Log(barycentricCoordinate);
+                                Debug.Log(u);
+                                Debug.Log(v);
+                                once = 0;
+                            }
+
                             RayTracingResult.SetPixel(x, y, inputTexture.GetPixel((int)u, (int)v));
                             i = 12;
                         }
@@ -197,7 +225,7 @@ namespace Assignment01
             Vector3 temp;
 
             // temp value to allow return false
-            barycentricCoordinate = ray;
+            barycentricCoordinate = new Vector3(0,0,0);
 
             if (t < 0 || Mathf.Abs(raydotnorm) < float.Epsilon) return false;
 
